@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <title>Clasificador de Frutas</title>
+    <!-- Cambiamos la forma de cargar la biblioteca -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
     <style>
         body {
@@ -43,9 +45,23 @@
         let model, labelContainer, maxPredictions;
         let modelLoaded = false;
 
+        // Verificar que la biblioteca esté disponible
+        window.onload = function() {
+            if (typeof tmImage === 'undefined') {
+                document.getElementById('model-status').innerText = 
+                    "Error: La biblioteca Teachable Machine no está disponible. Revisa tu conexión a internet.";
+                console.error("La biblioteca tmImage no está disponible");
+            }
+        }
+
         async function init() {
             document.getElementById('model-status').innerText = "Cargando modelo...";
             try {
+                // Verificación adicional antes de intentar cargar
+                if (typeof tmImage === 'undefined' || typeof tmImage.load !== 'function') {
+                    throw new Error("La biblioteca Teachable Machine no está disponible correctamente");
+                }
+
                 const modelURL = './model.json';
                 const metadataURL = './metadata.json';
                 model = await tmImage.load(modelURL, metadataURL);
@@ -134,5 +150,3 @@
     </script>
 </body>
 </html>
-
-
