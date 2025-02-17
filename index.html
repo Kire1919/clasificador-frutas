@@ -4,42 +4,132 @@
     <meta charset="UTF-8">
     <title>Clasificador de Frutas</title>
     <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        #result {
+            margin-top: 20px;
+        }
+        .prediction-bar {
+            height: 20px;
+            background-color: #4CAF50;
+            margin-bottom: 5px;
+        }
+        #image-preview {
+            max-width: 300px;
+            margin-top: 20px;
+        }
+        button, input {
+            padding: 10px;
+            margin: 10px 0;
+        }
+    </style>
 </head>
 <body>
     <h1>Clasificador de Frutas</h1>
     <button type="button" onclick="init()">Cargar Modelo</button>
-    <input type="file" id="upload-image" accept="image/*" onchange="predictImage()">
+    <div id="model-status">Modelo no cargado</div>
+    <input type="file" id="upload-image" accept="image/*" onchange="predictImage()" disabled>
+    <div id="image-container">
+        <img id="image-preview" style="display: none;" />
+    </div>
     <div id="result"></div>
 
     <script type="text/javascript">
         let model, labelContainer, maxPredictions;
+        let modelLoaded = false;
 
         async function init() {
-            const modelURL = 'model.json';
-            const metadataURL = 'metadata.json';
-
-            model = await tmImage.load(modelURL, metadataURL);
-            maxPredictions = model.getTotalClasses();
-
-            labelContainer = document.getElementById('result');
-            for (let i = 0; i < maxPredictions; i++) {
-                labelContainer.appendChild(document.createElement('div'));
+            document.getElementById('model-status').innerText = "Cargando modelo...";
+            try {
+                const modelURL = './model.json';
+                const metadataURL = './metadata.json';
+                model = await tmImage.load(modelURL, metadataURL);
+                maxPredictions = model.getTotalClasses();
+                
+                // Prepare label container
+                labelContainer = document.getElementById('result');
+                labelContainer.innerHTML = '';  // Clear previous content
+                for (let i = 0; i < maxPredictions; i++) {
+                    const predictionDiv = document.createElement('div');
+                    predictionDiv.className = 'prediction';
+                    const barDiv = document.createElement('div');
+                    barDiv.className = 'prediction-bar';
+                    barDiv.style.width = '0%';
+                    predictionDiv.appendChild(barDiv);
+                    predictionDiv.appendChild(document.createElement('span'));
+                    labelContainer.appendChild(predictionDiv);
+                }
+                
+                // Enable file input once model is loaded
+                document.getElementById('upload-image').disabled = false;
+                document.getElementById('model-status').innerText = "Modelo cargado con éxito!";
+                modelLoaded = true;
+                console.log("Modelo cargado correctamente");
+            } catch (error) {
+                console.error("Error cargando el modelo:", error);
+                document.getElementById('model-status').innerText = "Error cargando el modelo: " + error.message;
             }
         }
 
         async function predictImage() {
-            const image = document.getElementById('upload-image').files[0];
+            if (!modelLoaded) {
+                alert("Por favor, carga primero el modelo");
+                return;
+            }
+
+            const fileInput = document.getElementById('upload-image');
+            if (fileInput.files.length === 0) {
+                alert("Por favor, selecciona una imagen");
+                return;
+            }
+
+            const file = fileInput.files[0];
             const reader = new FileReader();
-            reader.onload = async function(event) {
-                const imgElement = document.createElement('img');
-                imgElement.src = event.target.result;
-                const prediction = await model.predict(imgElement);
-                for (let i = 0; i < maxPredictions; i++) {
-                    const classPrediction = prediction[i].className + ': ' + prediction[i].probability.toFixed(2);
-                    labelContainer.childNodes[i].innerHTML = classPrediction;
-                }
+
+            reader.onload = function(e) {
+                const imgPreview = document.getElementById('image-preview');
+                imgPreview.src = e.target.result;
+                imgPreview.style.display = 'block';
+                
+                // We'll use the onload event of the image to make sure it's fully loaded
+                imgPreview.onload = async function() {
+                    try {
+                        const predictions = await model.predict(imgPreview);
+                        displayPredictions(predictions);
+                    } catch (error) {
+                        console.error("Error durante la predicción:", error);
+                        document.getElementById('result').innerHTML = 
+                            "<p>Error durante la predicción: " + error.message + "</p>";
+                    }
+                };
             };
-            reader.readAsDataURL(image);
+
+            reader.onerror = function() {
+                console.error("Error leyendo el archivo");
+                alert("Error leyendo el archivo");
+            };
+
+            reader.readAsDataURL(file);
+        }
+
+        function displayPredictions(predictions) {
+            for (let i = 0; i < predictions.length; i++) {
+                const probability = predictions[i].probability * 100;
+                const barWidth = probability + '%';
+                const predictionElement = labelContainer.childNodes[i];
+                
+                // Update bar width
+                predictionElement.querySelector('.prediction-bar').style.width = barWidth;
+                
+                // Update text
+                predictionElement.querySelector('span').textContent = 
+                    predictions[i].className + ': ' + probability.toFixed(1) + '%';
+            }
         }
     </script>
 </body>
