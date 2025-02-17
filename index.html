@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Clasificador de Frutas</title>
-    <!-- Cambiamos la forma de cargar la biblioteca -->
+    
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
     <style>
@@ -67,7 +67,7 @@
                 model = await tmImage.load(modelURL, metadataURL);
                 maxPredictions = model.getTotalClasses();
                 
-                // Prepare label container
+                
                 labelContainer = document.getElementById('result');
                 labelContainer.innerHTML = '';  // Clear previous content
                 for (let i = 0; i < maxPredictions; i++) {
@@ -81,7 +81,7 @@
                     labelContainer.appendChild(predictionDiv);
                 }
                 
-                // Enable file input once model is loaded
+                
                 document.getElementById('upload-image').disabled = false;
                 document.getElementById('model-status').innerText = "Modelo cargado con éxito!";
                 modelLoaded = true;
@@ -112,7 +112,7 @@
                 imgPreview.src = e.target.result;
                 imgPreview.style.display = 'block';
                 
-                // We'll use the onload event of the image to make sure it's fully loaded
+                
                 imgPreview.onload = async function() {
                     try {
                         const predictions = await model.predict(imgPreview);
@@ -139,10 +139,10 @@
                 const barWidth = probability + '%';
                 const predictionElement = labelContainer.childNodes[i];
                 
-                // Update bar width
+                
                 predictionElement.querySelector('.prediction-bar').style.width = barWidth;
                 
-                // Update text
+                
                 predictionElement.querySelector('span').textContent = 
                     predictions[i].className + ': ' + probability.toFixed(1) + '%';
             }
